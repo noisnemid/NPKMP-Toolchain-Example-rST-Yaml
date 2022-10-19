@@ -1,0 +1,182 @@
+////////////////////////////////////////
+FUNCTIONS PART STARTS
+////////////////////////////////////////
+
+global
+version = '20221019';
+var vsc = require('vscode');
+var path = require('path');
+
+//依次为1，2，3级标题的标记符。其中1级标记会被用于总标题（上下标）和一级标题（仅下标）
+var HEADLINEMARKS = ['=', '-', '.'];
+
+function currentDoc(){
+    let ae = vsc.window.activeTextEditor;
+    let doc = ae.document;
+    return doc;
+}
+
+String.prototype.sLen = function ()
+{
+    // this is a special string length calculator
+    // this implementation is actually not necessary, but I prefre to reserve it
+    // just for demonstration about adding proto fucntions to the global objects.
+    let tmpLen = this.replace(/[^\x00-\xff]/g, "aa").length; // this line means CJK chars counts 2, this is a little tricky method
+    let minLen = 6; //minimal length of the title marks
+    if (tmpLen <= 0) return 0;
+    else if (tmpLen < minLen) return minLen;
+    else return tmpLen;
+};
+
+function lnt(offset = 0)
+{
+    // return the text of the line whose linenumber has an offset(+/-) to the current linenumber
+    // lnt stands for LiNeText
+    let ae = vsc.window.activeTextEditor;
+    let doc = ae.document;
+    let linenumber = doc.positionAt(doc.offsetAt(ae.selection.active)).line + offset;
+    linenumber = linenumber < 0 ? 0 : linenumber;
+    let linetext = doc.lineAt(linenumber).text
+    return linetext
+}
+
+function fnToTitle(title){
+    title = title.split('_'); //下划线约定处理：文件名皆以下划线分隔，全小写
+    // for (i=0;i<title.length;i++){ // 首字母大写
+    //     title[i] = title[i][0].toUpperCase() + title[i].slice(1);
+    // }
+    title = title.join(' ');
+    return title;
+}
+
+function indexTitleMarked()
+{
+    let doc = currentDoc();
+    let title = path.basename(path.dirname(doc.fileName))+'/';
+    title = fnToTitle(title);
+    let marks = HEADLINEMARKS[0].repeat(title.sLen());
+    return marks + '\n' + title + '\n' + marks;
+}
+
+function docTitleMarked()
+{
+    let doc = currentDoc();
+    let title = path.basename(doc.fileName).split('.')[0];
+    title = fnToTitle(title);
+    let marks = HEADLINEMARKS[0].repeat(title.sLen());
+    return marks + '\n' + title + '\n' + marks;
+}
+
+
+
+function h1()
+{
+    let t = lnt(-1);
+    return HEADLINEMARKS[0].repeat(t.sLen());
+}
+
+function h2()
+{
+    let t = lnt(-1);
+    return HEADLINEMARKS[1].repeat(t.sLen());
+}
+
+function h3()
+{
+    let t = lnt(-1);
+    return HEADLINEMARKS[2].repeat(t.sLen());
+}
+
+endglobal
+
+
+////////////////////////////////////////
+FUNCTIONS PART ENDS
+////////////////////////////////////////
+
+
+////////////////////////////////////////
+SNIPPET PART STARTS
+////////////////////////////////////////
+
+
+snippet n "new doc, WITHOUT meta" i
+``rv=docTitleMarked()``
+
+
+endsnippet
+
+
+snippet a "headline 1" i
+``
+rv=h1()
+``
+
+endsnippet
+
+snippet b "headline 2" i
+``
+rv=h2()
+``
+
+endsnippet
+
+snippet c "headline 3" i
+``
+rv=h3()
+``
+
+endsnippet
+
+
+snippet cb "code-block directive" i
+.. code-block::
+
+    $1
+
+endsnippet
+
+
+snippet im "image/media" i
+.. image:: ./media/$1
+    :alt: IMAGE
+
+$2
+endsnippet
+
+snippet com "comments, just for notes" i
+NOTE-COMMENTS
+=============
+
+
+endsnippet
+
+snippet cnt "inside-doc toc tree" i
+.. contents::
+    :backlinks: entry
+    :local:
+
+
+endsnippet
+
+
+
+
+////////////////////////////////////////
+SNIPPETS PART ENDS
+////////////////////////////////////////
+
+////////////////////////////////////////
+Testing Zones...
+////////////////////////////////////////
+
+
+snippet test! "Current Filename" i
+``rv = PYTHON_CODE_ROOT``
+endsnippet
+
+snippet box "Box" A
+``rv = '┌' + '─'.repeat(t[0].length + 2) + '┐'``
+│ ``rv=' '.repeat(t[0].length/2)``$1 ``rv=' '.repeat(t[0].length/2)`` │
+``rv = '└' + '─'.repeat(t[0].length + 2) + '┘'``
+endsnippet

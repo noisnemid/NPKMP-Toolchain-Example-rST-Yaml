@@ -1,0 +1,302 @@
+////////////////////////////////////////
+FUNCTIONS PART STARTS
+////////////////////////////////////////
+
+global
+version = '20221004';
+var vsc = require('vscode');
+var path = require('path');
+var callSync = require('child_process').execSync; // coz rv needs the return value of a function, you have to use a sync function.
+if (process.platform=='win32')
+    // 此代码用于使用绝对路径的方式引入第三方包 icvon-lite
+    // 参考链接: https://stackoverflow.com/a/22262150
+    // iconv-lite包的作用在于不改变windows全局编码方式的情况下，
+    // 解码来自命令行执行其它命令时结果返回的gbk字节。
+    var gbk_decoder = require('d:/x/s/env/node_modules/iconv-lite');
+
+// 根据操作系统类型构造脚本根目录的格式
+var PYTHON_CODE_ROOT = (process.platform=='win32') ? 'd:' : '~'
+
+//依次为1，2，3级标题的标记符。其中1级标记会被用于总标题（上下标）和一级标题（仅下标）
+var HEADLINEMARKS = ['=', '-', '.'];
+
+function currentDoc(){
+    let ae = vsc.window.activeTextEditor;
+    let doc = ae.document;
+    return doc;
+}
+
+String.prototype.sLen = function ()
+{
+    // this is a special string length calculator
+    // this implementation is actually not necessary, but I prefre to reserve it
+    // just for demonstration about adding proto fucntions to the global objects.
+    let tmpLen = this.replace(/[^\x00-\xff]/g, "aa").length; // this line means CJK chars counts 2, this is a little tricky method
+    let minLen = 6; //minimal length of the title marks
+    if (tmpLen <= 0) return 0;
+    else if (tmpLen < minLen) return minLen;
+    else return tmpLen;
+};
+
+function lnt(offset = 0)
+{
+    // return the text of the line whose linenumber has an offset(+/-) to the current linenumber
+    // lnt stands for LiNeText
+    let ae = vsc.window.activeTextEditor;
+    let doc = ae.document;
+    let linenumber = doc.positionAt(doc.offsetAt(ae.selection.active)).line + offset;
+    linenumber = linenumber < 0 ? 0 : linenumber;
+    let linetext = doc.lineAt(linenumber).text
+    return linetext
+}
+
+function fnToTitle(title){
+    title = title.split('_'); //下划线约定处理：文件名皆以下划线分隔，全小写
+    // for (i=0;i<title.length;i++){ // 首字母大写
+    //     title[i] = title[i][0].toUpperCase() + title[i].slice(1);
+    // }
+    title = title.join(' ');
+    return title;
+}
+
+function indexTitleMarked()
+{
+    let doc = currentDoc();
+    let title = path.basename(path.dirname(doc.fileName))+'/';
+    title = fnToTitle(title);
+    let marks = HEADLINEMARKS[0].repeat(title.sLen());
+    return marks + '\n' + title + '\n' + marks;
+}
+
+function docTitleMarked()
+{
+    let doc = currentDoc();
+    let title = path.basename(doc.fileName).split('.')[0];
+    title = fnToTitle(title);
+    let marks = HEADLINEMARKS[0].repeat(title.sLen());
+    return marks + '\n' + title + '\n' + marks;
+}
+
+function indices()
+{
+    let doc = currentDoc();
+    let cmd = [
+        'python',
+        PYTHON_CODE_ROOT+'/x/c/py/utility/text/rst_utils/extract_indices.py',
+        '"'+doc.uri.fsPath+'"'
+    ].join(' ')
+    let a = callSync(cmd);
+    let rv = (process.platform=='win32') ? gbk_decoder.decode(a, 'gbk') : a + '';
+    //rv = rv.trim();
+    return rv;
+}
+
+function t2k(text)
+{
+    //text to keywords
+    let doc = currentDoc();
+    let cmd_arg = text === undefined ? path.basename(doc.uri.fsPath).split('.')[0] : text;
+    let cmd = [
+        //'cmd /c chcp 65001 > nul &&',
+        'python',
+        PYTHON_CODE_ROOT+'/x/c/py/utility/text/jiebacut/jiebacut.py',
+        cmd_arg
+    ].join(' ')
+    let a = callSync(cmd);
+    let rv = (process.platform=='win32') ? gbk_decoder.decode(a, 'gbk') : a + '';
+    rv = rv.trim();
+
+    // 如果由于停止词等原因导致最后结果为空，则将文件名直接代入
+    if (rv == '') rv = cmd_arg
+    
+    return rv;
+}
+
+function h1()
+{
+    let t = lnt(-1);
+    return HEADLINEMARKS[0].repeat(t.sLen());
+}
+
+function h2()
+{
+    let t = lnt(-1);
+    return HEADLINEMARKS[1].repeat(t.sLen());
+}
+
+function h3()
+{
+    let t = lnt(-1);
+    return HEADLINEMARKS[2].repeat(t.sLen());
+}
+
+endglobal
+
+
+////////////////////////////////////////
+FUNCTIONS PART ENDS
+////////////////////////////////////////
+
+
+////////////////////////////////////////
+SNIPPET PART STARTS
+////////////////////////////////////////
+
+
+
+snippet i "index.rst doc head auto generaate" i
+``rv=indexTitleMarked()``
+
+.. index:: ``rv=indices()``
+.. meta::
+    :keywords: ``rv=t2k('IndexPage,'+ indices())``
+
+.. toctree::
+    :glob:
+    :maxdepth: 1
+
+    */*
+$0
+endsnippet
+
+
+snippet nn "new ORIGNAL note, with meta" i
+.. _$TM_FILENAME_BASE:
+
+``rv=docTitleMarked()``
+
+.. index:: ``rv=indices()``
+.. meta::
+    :keywords: ``rv=t2k()``
+
+:Date:      $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND
+:From:      NOISNEMID
+:Author:    NOISNEMID
+
+
+endsnippet
+
+snippet nw "new WEB note, with meta" i
+.. _$TM_FILENAME_BASE:
+
+``rv=docTitleMarked()``
+
+.. index:: ``rv=indices()``
+.. meta::
+    :keywords: ``rv=t2k()``
+
+:Date:      $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND
+:From:      Internet
+:Author:    Internet
+
+
+endsnippet
+
+snippet n "new doc, WITHOUT meta" i
+``rv=docTitleMarked()``
+
+
+endsnippet
+
+
+snippet a "headline 1" i
+``
+rv=h1()
+``
+
+endsnippet
+
+snippet b "headline 2" i
+``
+rv=h2()
+``
+
+endsnippet
+
+snippet c "headline 3" i
+``
+rv=h3()
+``
+
+endsnippet
+
+
+snippet cb "code-block directive" i
+.. code-block::
+
+    $1
+
+endsnippet
+
+
+snippet im "image/media" i
+.. image:: ./media/$1
+    :alt: IMAGE
+
+$2
+endsnippet
+
+snippet com "comments, just for notes" i
+NOTE-COMMENTS
+=============
+
+
+endsnippet
+
+snippet cnt "inside-doc toc tree" i
+.. contents::
+    :backlinks: entry
+    :local:
+
+
+endsnippet
+
+
+snippet e! "place and eject/export an anchor point" i
+.. _$TM_FILENAME_BASE-$1:
+
+:RefBy: :ref:`$2 <$2>`
+
+endsnippet
+
+
+snippet r! "ref an anchor" i
+.. _$TM_FILENAME_BASE-$1:,
+
+:ref:`$2 <$2>`
+
+endsnippet
+
+
+snippet sub "subscription" i
+:sub:`$1`\\ $2
+endsnippet
+
+snippet sup "superscription" i
+:sup:`$1`\\ $2
+endsnippet
+
+
+snippet fn "Current Filename" i
+``rv = currentDoc().uri.fsPath``
+endsnippet
+
+
+////////////////////////////////////////
+SNIPPETS PART ENDS
+////////////////////////////////////////
+
+////////////////////////////////////////
+Testing Zones...
+////////////////////////////////////////
+
+
+snippet test! "Current Filename" i
+``rv = PYTHON_CODE_ROOT``
+endsnippet
+
+snippet box "Box" A
+``rv = '┌' + '─'.repeat(t[0].length + 2) + '┐'``
+│ ``rv=' '.repeat(t[0].length/2)``$1 ``rv=' '.repeat(t[0].length/2)`` │
+``rv = '└' + '─'.repeat(t[0].length + 2) + '┘'``
+endsnippet
