@@ -1,7 +1,7 @@
 How to Use?
 ===========
 
-这是为VsCode配套的Hypersnips配置。
+这是为VsCode配套的HyperSnips配置。
 
 使用方法：
 
