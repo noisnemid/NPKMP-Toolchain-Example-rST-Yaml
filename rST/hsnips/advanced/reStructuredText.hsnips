@@ -3,22 +3,37 @@ FUNCTIONS PART STARTS
 ////////////////////////////////////////
 
 global
-version = '20221004';
+version = '20221019';
 var vsc = require('vscode');
 var path = require('path');
+var os = require('os');
+
 var callSync = require('child_process').execSync; // coz rv needs the return value of a function, you have to use a sync function.
+
+var HSNIPS_ROOT = path.join(os.homedir(), 'AppData/Roaming/Code/User/hsnips/')
+
 if (process.platform=='win32')
     // 此代码用于使用绝对路径的方式引入第三方包 icvon-lite
     // 参考链接: https://stackoverflow.com/a/22262150
     // iconv-lite包的作用在于不改变windows全局编码方式的情况下，
     // 解码来自命令行执行其它命令时结果返回的gbk字节。
-    var gbk_decoder = require('d:/x/s/env/node_modules/iconv-lite');
+    //var gbk_decoder = require('d:/x/s/env/node_modules/iconv-lite');
+    var gbk_decoder = require(path.join(HSNIPS_ROOT, 'node_modules/iconv-lite'));
 
 // 根据操作系统类型构造脚本根目录的格式
-var PYTHON_CODE_ROOT = (process.platform=='win32') ? 'd:' : '~'
+var PYTHON_CODE_ROOT = (process.platform=='win32') ? path.join(HSNIPS_ROOT,'python_scripts') : '~'
 
 //依次为1，2，3级标题的标记符。其中1级标记会被用于总标题（上下标）和一级标题（仅下标）
 var HEADLINEMARKS = ['=', '-', '.'];
+
+
+function getNoteAuthor()
+{
+    // Edit here for the note user alias / author name.
+    return '笔记作者';
+}
+
+
 
 function currentDoc(){
     let ae = vsc.window.activeTextEditor;
@@ -82,7 +97,7 @@ function indices()
     let doc = currentDoc();
     let cmd = [
         'python',
-        PYTHON_CODE_ROOT+'/x/c/py/utility/text/rst_utils/extract_indices.py',
+        path.join(PYTHON_CODE_ROOT, 'extract_indices.py'),
         '"'+doc.uri.fsPath+'"'
     ].join(' ')
     let a = callSync(cmd);
@@ -99,7 +114,7 @@ function t2k(text)
     let cmd = [
         //'cmd /c chcp 65001 > nul &&',
         'python',
-        PYTHON_CODE_ROOT+'/x/c/py/utility/text/jiebacut/jiebacut.py',
+        path.join(PYTHON_CODE_ROOT, 'jiebacut/jiebacut.py'),
         cmd_arg
     ].join(' ')
     let a = callSync(cmd);
@@ -128,6 +143,12 @@ function h3()
 {
     let t = lnt(-1);
     return HEADLINEMARKS[2].repeat(t.sLen());
+}
+
+function test()
+{
+    let t = path.join(os.homedir(), 'AppData/Roaming/Code/User/hsnips/node_modules/iconv-lite');
+    return t;
 }
 
 endglobal
@@ -170,8 +191,8 @@ snippet nn "new ORIGNAL note, with meta" i
     :keywords: ``rv=t2k()``
 
 :Date:      $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE $CURRENT_HOUR:$CURRENT_MINUTE:$CURRENT_SECOND
-:From:      NOISNEMID
-:Author:    NOISNEMID
+:From:      ``rv=getNoteAuthor()``
+:Author:    ``rv=getNoteAuthor()``
 
 
 endsnippet
@@ -292,7 +313,7 @@ Testing Zones...
 
 
 snippet test! "Current Filename" i
-``rv = PYTHON_CODE_ROOT``
+``rv = test()``
 endsnippet
 
 snippet box "Box" A
