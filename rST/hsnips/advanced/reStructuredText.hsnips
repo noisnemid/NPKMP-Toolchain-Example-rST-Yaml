@@ -10,6 +10,7 @@ var os = require('os');
 
 var callSync = require('child_process').execSync; // coz rv needs the return value of a function, you have to use a sync function.
 
+// if you are using other vscode forks or implementation for linux, the hsnips might not in ~/.config/Code/User/hsnips. Find it and change the code to fit your system.
 var HSNIPS_ROOT = (process.platform == 'win32') ? path.join(os.homedir(), 'AppData/Roaming/Code/User/hsnips/') : path.join(os.homedir(), '.config/Code/User/hsnips/')
 var PYTHON_CODE_ROOT = path.join(HSNIPS_ROOT,'python_scripts')
 if (process.platform=='win32')
