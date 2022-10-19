@@ -11,7 +11,7 @@ var os = require('os');
 var callSync = require('child_process').execSync; // coz rv needs the return value of a function, you have to use a sync function.
 
 var HSNIPS_ROOT = (process.platform == 'win32') ? path.join(os.homedir(), 'AppData/Roaming/Code/User/hsnips/') : path.join(os.homedir(), '.config/Code/User/hsnips/')
-
+var PYTHON_CODE_ROOT = path.join(HSNIPS_ROOT,'python_scripts')
 if (process.platform=='win32')
     // 此代码用于使用绝对路径的方式引入第三方包 icvon-lite
     // 参考链接: https://stackoverflow.com/a/22262150
@@ -20,20 +20,14 @@ if (process.platform=='win32')
     //var gbk_decoder = require('d:/x/s/env/node_modules/iconv-lite');
     var gbk_decoder = require(path.join(HSNIPS_ROOT, 'node_modules/iconv-lite'));
 
-// 根据操作系统类型构造脚本根目录的格式
-var PYTHON_CODE_ROOT = path.join(HSNIPS_ROOT,'python_scripts')
-
 //依次为1，2，3级标题的标记符。其中1级标记会被用于总标题（上下标）和一级标题（仅下标）
 var HEADLINEMARKS = ['=', '-', '.'];
-
 
 function getNoteAuthor()
 {
     // Edit here for the note user alias / author name.
     return '笔记作者';
 }
-
-
 
 function currentDoc(){
     let ae = vsc.window.activeTextEditor;
