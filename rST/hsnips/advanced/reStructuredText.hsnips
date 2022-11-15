@@ -27,7 +27,7 @@ var HEADLINEMARKS = ['=', '-', '.'];
 function getNoteAuthor()
 {
     // Edit here for the note user alias / author name.
-    return '笔记作者';
+    return 'NOISNEMID';
 }
 
 function currentDoc(){
@@ -60,7 +60,12 @@ function lnt(offset = 0)
     return linetext
 }
 
-function fnToTitle(title){
+
+function fnToTitle(){
+    let doc = currentDoc();
+    let fn = doc.fileName;
+    let ext = path.extname(fn);
+    let title = path.basename(fn, ext);
     title = title.split('_'); //下划线约定处理：文件名皆以下划线分隔，全小写
     // for (i=0;i<title.length;i++){ // 首字母大写
     //     title[i] = title[i][0].toUpperCase() + title[i].slice(1);
@@ -73,16 +78,16 @@ function indexTitleMarked()
 {
     let doc = currentDoc();
     let title = path.basename(path.dirname(doc.fileName))+'/';
-    title = fnToTitle(title);
+    title = title.split('_').join(' ');
     let marks = HEADLINEMARKS[0].repeat(title.sLen());
     return marks + '\n' + title + '\n' + marks;
 }
 
 function docTitleMarked()
 {
-    let doc = currentDoc();
-    let title = path.basename(doc.fileName).split('.')[0];
-    title = fnToTitle(title);
+    // let doc = currentDoc();
+    // let title = path.basename(doc.fileName).split('.')[0];
+    let title = fnToTitle();
     let marks = HEADLINEMARKS[0].repeat(title.sLen());
     return marks + '\n' + title + '\n' + marks;
 }
@@ -104,8 +109,8 @@ function indices()
 function t2k(text)
 {
     //text to keywords
-    let doc = currentDoc();
-    let cmd_arg = text === undefined ? path.basename(doc.uri.fsPath).split('.')[0] : text;
+    let title = fnToTitle();
+    let cmd_arg = text === undefined ? title : text;
     let cmd = [
         //'cmd /c chcp 65001 > nul &&',
         'python',
@@ -118,7 +123,7 @@ function t2k(text)
 
     // 如果由于停止词等原因导致最后结果为空，则将文件名直接代入
     if (rv == '') rv = cmd_arg
-    
+
     return rv;
 }
 
@@ -142,7 +147,10 @@ function h3()
 
 function test()
 {
-    let t = path.join(os.homedir(), 'AppData/Roaming/Code/User/hsnips/node_modules/iconv-lite');
+    // let t = path.join(os.homedir(), 'AppData/Roaming/Code/User/hsnips/node_modules/iconv-lite');
+    let doc = currentDoc();
+    let ext = path.extname(doc.fileName);
+    let t = path.basename(doc.fileName, ext);
     return t;
 }
 
@@ -232,6 +240,19 @@ endsnippet
 snippet c "headline 3" i
 ``
 rv=h3()
+``
+
+endsnippet
+
+snippet idx "indices from title" i
+``
+rv=indices()
+``
+endsnippet
+
+snippet kw "keywords from title" i
+``
+rv=t2k()
 ``
 
 endsnippet
